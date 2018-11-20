@@ -23,7 +23,8 @@ pip install -r requirements.txt
 You can train a small SoPa model on CPU by calling
 
 ```bash
-python sst.py \
+python main.py \
+  --dataset sst \
   --model-type=sopa \
   --embed-dim=50 \
   --dropout=0.0 \
@@ -36,7 +37,7 @@ python sst.py \
   --verbose
 ```
 
-This runs in ~=16s per epoch on my CPU (Core i5 @2.80GHz) and gives me 75.89% test accuracy after 6 epochs (best validation accuracy=75.80%).
+This runs in ~=16s per epoch on my CPU (Core i5 @2.80GHz) and gives me 76.99% test accuracy after 6 epochs (best validation accuracy=77.29%).
 
 Here are sample explanations:
 
@@ -48,14 +49,14 @@ Negative contribution: ___ silly humbuggery ...
 
 ```
 But they do n't fit well together and neither is well told .
-Positive contribution: ___________ , __ ____________ _ movie .
-Negative contribution: Forgettable _ if good-hearted , _____ _
+Positive contribution: But ____ __ ___ ___ ____ ________ ___ _______ is ____ ____ _
+Negative contribution: ___ they do n't fit well ________ and neither __ ____ ____ _
 ```
 
 ```
 A rollicking ride , with jaw-dropping action sequences , striking villains , a gorgeous color palette , astounding technology , stirring music and a boffo last hour that leads up to a strangely sinister happy ending .
 Positive contribution: A rollicking ____ _ ____ ____________ ______ _________ _ ________ ________ _ _ ________ _____ _______ _ __________ __________ _ ________ _____ ___ _ _____ ____ ____ ____ _____ __ __ _ _________ ________ happy ending .
-Negative contribution: _ __________ ride , ____ ____________ ______ _________ , striking ________ _ _ ________ _____ _______ _ __________ __________ _ stirring music ___ _ _____ last hour that leads up to a strangely sinister _____ ______ _
+Negative contribution: _ __________ ride , with ____________ ______ _________ , striking ________ _ _ ________ _____ _______ _ __________ __________ _ stirring music ___ _ _____ last hour that leads up to a _________ ________ _____ ______ _
 ```
 
 ## Explanations

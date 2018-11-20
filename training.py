@@ -20,7 +20,10 @@ def get_training_args():
     parser = argparse.ArgumentParser()
     # Data
     data_group = parser.add_argument_group("Data arguments")
+    data_group.add_argument("--dataset", default="sst",
+                            choices=["sst", "amazon"])
     data_group.add_argument("--data-dir", default="data")
+    data_group.add_argument("--reprocess-data", action="store_true")
     data_group.add_argument("--lowercase", action="store_true")
     # Optimization
     optim_group = parser.add_argument_group("Optimization arguments")
