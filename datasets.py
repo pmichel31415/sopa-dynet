@@ -1,36 +1,13 @@
 #!/usr/bin/env python3
-import os.path
-import pickle
 import numpy as np
 
 from dynn.data import sst, amazon
+from dynn.data import caching
 from dynn.data import preprocess
 from dynn.data import Dictionary
 from dynn.data.batching import PaddedSequenceBatches
 
 from util import Logger
-
-
-def cached_dataset(dataset_name):
-    cached_filename = f"data/{dataset_name}.cached.bin"
-
-    def _load_cached_dataset(load_function):
-        def wrapped_load_func(args, log):
-            if not os.path.isfile(cached_filename) or args.reprocess_data:
-                # If the cached dataset doesn't exist, do all the processing
-                dataset = load_function(args, log)
-                with open(cached_filename, "wb") as f:
-                    pickle.dump(dataset, f)
-            else:
-                # Other unpickle the preprocessed dataset
-                log(f"Loading cached {dataset_name} dataset from "
-                    f"{cached_filename}")
-                with open(cached_filename, "rb") as f:
-                    dataset = pickle.load(f)
-            return dataset
-        return wrapped_load_func
-
-    return _load_cached_dataset
 
 
 def get_dataset(args, log=None):
@@ -41,7 +18,7 @@ def get_dataset(args, log=None):
     return dataset
 
 
-@cached_dataset("sst")
+@caching.cached_to_file("data/sst.cached.bin")
 def load_and_prepare_sst(args, log=None):
     log = log or Logger(verbose=args.verbose, flush=True)
     # Download SST
@@ -97,7 +74,7 @@ def load_and_prepare_sst(args, log=None):
     return batches, dic
 
 
-@cached_dataset("amazon")
+@caching.cached_to_file("data/amazon.cached.bin")
 def load_and_prepare_amazon(args, log=None):
     log = log or Logger(verbose=args.verbose, flush=True)
     # Download amazon
