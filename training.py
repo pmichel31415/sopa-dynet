@@ -18,6 +18,8 @@ import util
 
 def get_training_args():
     parser = argparse.ArgumentParser()
+    # Dynet
+    dynn.command_line.add_dynet_args(parser)
     # Data
     data_group = parser.add_argument_group("Data arguments")
     data_group.add_argument("--dataset", default="sst",
