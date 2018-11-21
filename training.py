@@ -30,6 +30,7 @@ def get_training_args():
     # Optimization
     optim_group = parser.add_argument_group("Optimization arguments")
     optim_group.add_argument("--batch-size", default=150, type=int)
+    optim_group.add_argument("--max-tokens-per-batch", default=4000, type=int)
     optim_group.add_argument("--n-epochs", default=10, type=int)
     optim_group.add_argument("--patience", default=2, type=int)
     optim_group.add_argument("--lr", default=0.001, type=float)
@@ -40,6 +41,7 @@ def get_training_args():
                              choices=models.supported_model_types)
     model_group.add_argument("--model-file", default="sopa_sst.npz")
     model_group.add_argument("--pretrained-embeds", default=None, type=str)
+    model_group.add_argument("--freeze-embeds", action="store_true")
     model_group.add_argument("--renormalize-embeds", action="store_true")
     # Misc
     misc_group = parser.add_argument_group("Miscellaneous arguments")
@@ -74,6 +76,7 @@ def instantiate_network(args, dic, log=None):
             args.pretrained_embeds,
             renormalize=args.renormalize_embeds,
         )
+        network.freeze_embeds = args.freeze_embeds
     return network
 
 

@@ -51,7 +51,7 @@ def load_and_prepare_sst(args, log=None):
     log("Creating batch iterators")
     batches = {}
     batches["train"] = PaddedSequenceBatches(
-        train_x, train_y, dic, max_samples=args.batch_size
+        train_x, train_y, dic, max_samples=args.batch_size, max_tokens=args.max_tokens_per_batch
     )
     batches["dev"] = PaddedSequenceBatches(
         dev_x, dev_y, dic, max_samples=32, shuffle=False
@@ -111,7 +111,7 @@ def load_and_prepare_amazon(args, log=None):
     log("Creating batch iterators")
     batches = {}
     batches["train"] = PaddedSequenceBatches(
-        train_x, train_y, dic, max_samples=args.batch_size
+        train_x, train_y, dic, max_samples=args.batch_size, max_tokens=args.max_tokens_per_batch
     )
     batches["dev"] = PaddedSequenceBatches(
         dev_x, dev_y, dic, max_samples=32, shuffle=False

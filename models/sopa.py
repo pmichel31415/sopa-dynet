@@ -51,6 +51,8 @@ class SoPaLayer(ParametrizedLayer):
         self.epsilon_p = self.pc.add_parameters((ns - 1, dh), name="eps")
         # Keep track of the addition op
         self.plus_op = self.sr.plus
+        self.zero_val = self.sr.zero(1).scalar_value()
+        self.one_val = self.sr.one(1).scalar_value()
 
     def init(self, test=False, update=True):
         self.next_state.init(test=test, update=update)
@@ -88,8 +90,8 @@ class SoPaLayer(ParametrizedLayer):
         return seq_mask(
             N,
             lengths or [N for _ in range(bsz)],
-            self.sr.one(1).value(),
-            self.sr.zero(1).value()
+            self.one_val,
+            self.zero_val,
         )
 
     def get_transitions(self, x):
@@ -306,7 +308,8 @@ class SoPa(SentenceClassifier):
         return self.embed.params
 
     def init(self, test=False, update=True):
-        self.embed.init(test=test, update=update)
+        frozen_embeds = getattr(self, "freeze_embeds", False)
+        self.embed.init(test=test, update=update and not frozen_embeds)
         self.sopas.init(test=test, update=update)
         self.softmax.init(test=test, update=update)
 
