@@ -7,6 +7,7 @@ from dynn.layers import ParametrizedLayer
 from dynn.layers import Affine
 from dynn.layers import Embeddings
 from dynn.layers import Parallel
+from dynn.layers import LayerNorm
 
 from dynn.operations import seq_mask
 
@@ -44,11 +45,28 @@ class SoPaLayer(ParametrizedLayer):
         self.sl_scale = sl_scale  # Scale for self loops
         self.dropout = dropout  # Dropout rate
         # Transition matrices
+        W_next = self.pc.add_parameters(
+            ((ns - 1)*dh, dx),
+            init="normal",
+            std=1 / np.sqrt(dx),
+            name="W-next"
+        )
         self.next_state = Affine(self.pc, dx, (ns - 1) * dh,
-                                 dropout=dropout, activation=self.sr.encode)
+                                 activation=self.sr.encode,
+                                 W_p=W_next)
+        W_same = self.pc.add_parameters(
+            (ns * dh, dx),
+            init="normal",
+            std=1 / np.sqrt(dx),
+            name="W-same",
+        )
         self.same_state = Affine(self.pc, dx, ns * dh,
-                                 dropout=dropout, activation=self.sr.encode)
-        self.epsilon_p = self.pc.add_parameters((ns - 1, dh), name="eps")
+                                 activation=self.sr.encode,
+                                 W_p=W_same)
+        # Weight for epsilon transitions
+        self.epsilon_p = self.pc.add_parameters(
+            (ns - 1, dh), name="eps", init="normal"
+        )
         # Keep track of the addition op
         self.plus_op = self.sr.plus
         self.zero_val = self.sr.zero(1).scalar_value()
@@ -191,14 +209,16 @@ class SoPaLayer(ParametrizedLayer):
                 stop_pos = np.where(stop_here, t, stop_pos)
             # Update best score
             score_final = self.sr.plus(masked_score_final_t, score_final)
+        # Decode to reals
+        score_final = self.sr.decode(score_final)
         # Return everything
         if explain:
             # Restor the semiring + operation
             self.de_viterbize_semiring()
             # Returns scores and start/end indices of their best match
-            return self.sr.decode(score_final), start_pos, stop_pos
+            return score_final, start_pos, stop_pos
         else:
-            return self.sr.decode(score_final)
+            return score_final
 
     def advance_start_pos(self, start_pos, advance, t):
         """Shift the starting position pointer for the best match"""
@@ -245,18 +265,20 @@ class SoPa(SentenceClassifier):
         n_eps,
         sl_scale,
         nc,
-        dropout
+        dropout,
+        ln,
     ):
         # Hyperparameters
-        self.dic = dic  # Dictionary
+        self._dic = dic  # Dictionary
         self.sr = sr  # Semiring
         self.dx = dx  # Word embedding dim
         self.pattern_shapes = parse_pattern_description(pattern_desc)
-        self.n_patterns = sum(n for n, _ in self.pattern_shapes)
+        self.do = sum(n for n, _ in self.pattern_shapes)  # Out dim (#patterns)
         self.n_eps = n_eps  # Number of epsilon transitions
         self.sl_scale = sl_scale  # Self-loop scale
         self.nc = nc  # Number of classes
         self.dropout = dropout  # dropout (duh...)
+        self.ln = ln  # Layer norm
         # Master parameter collection
         self.pc = dy.ParameterCollection()
         # Word embeddings
@@ -268,8 +290,10 @@ class SoPa(SentenceClassifier):
                                    n_eps, sl_scale, dropout)
             self.sopa_layers.append(sopa_layer)
         self.sopas = Parallel(*self.sopa_layers)
+        # Layer norm
+        self.layer_norm = LayerNorm(self.pc, self.do) if ln else None
         # Softmax layer
-        self.softmax = Affine(self.pc, self.n_patterns, nc, dropout=dropout)
+        self.softmax = Affine(self.pc, self.do, nc, dropout=dropout)
 
     @staticmethod
     def add_args(parser):
@@ -289,6 +313,7 @@ class SoPa(SentenceClassifier):
                                 choices=semirings.keys())
         sopa_group.add_argument("--dropout", default=0.1,
                                 help="Dropout", type=float)
+        sopa_group.add_argument("--layer-norm", action="store_true")
 
     @staticmethod
     def from_args(dic, num_classes, args):
@@ -301,9 +326,15 @@ class SoPa(SentenceClassifier):
             args.self_loop_scale,
             num_classes,
             args.dropout,
+            args.layer_norm,
         )
 
-    def get_word_embeddings(self):
+    @property
+    def dic(self):
+        return self._dic
+
+    @property
+    def word_embeddings(self):
         """Return the word embedding lookup parameters"""
         return self.embed.params
 
@@ -311,6 +342,8 @@ class SoPa(SentenceClassifier):
         frozen_embeds = getattr(self, "freeze_embeds", False)
         self.embed.init(test=test, update=update and not frozen_embeds)
         self.sopas.init(test=test, update=update)
+        if self.ln:
+            self.layer_norm.init(test=test, update=update)
         self.softmax.init(test=test, update=update)
 
     def __call__(self, batch, return_embeds=False):
@@ -323,6 +356,8 @@ class SoPa(SentenceClassifier):
         # Initial and final state
         h = self.sopas(w_embeds, lengths=batch.lengths)
         # Logits
+        if self.ln:
+            h = self.layer_norm(h)
         logits = self.softmax(h)
         # Return with embeddings
         if return_embeds:

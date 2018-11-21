@@ -69,7 +69,7 @@ semirings = {
         one=dy.ones,
         plus=dy.bmax,
         times=dy.cmult,
-        encode=dy.exp,
+        encode=activations.sigmoid,
         decode=activations.identity,
     ),
     # Viterbi semiring (in log space)

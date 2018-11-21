@@ -19,6 +19,7 @@ class BiLSTM(SentenceClassifier):
     """Your friendly neighborhood BiLSTM"""
 
     def __init__(self, dic, dx, dh, nc, dropout):
+        self._dic = dic
         # Master parameter collection
         self.pc = dy.ParameterCollection()
         # Word embeddings
@@ -56,7 +57,12 @@ class BiLSTM(SentenceClassifier):
             args.dropout,
         )
 
-    def get_word_embeddings(self):
+    @property
+    def dic(self):
+        return self._dic
+
+    @property
+    def word_embeddings(self):
         """Return word embeddings lookup parameter"""
         return self.embed.layer.params
 

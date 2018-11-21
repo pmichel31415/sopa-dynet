@@ -27,36 +27,37 @@ python main.py \
   --dataset sst \
   --model-type=sopa \
   --embed-dim=50 \
-  --dropout=0.0 \
+  --dropout=0.1 \
   --pattern-desc=20x3+20x4+20x5 \
   --semiring=log_viterbi \
   --n-epsilon=1 \
-  --lr=0.001 \
+  --lr=0.05 \
   --patience=3 \
   --n-epochs=20 \
   --verbose
 ```
 
-This runs in ~=16s per epoch on my CPU (Core i5 @2.80GHz) and gives me 76.99% test accuracy after 6 epochs (best validation accuracy=77.29%).
+This runs in ~=36s per epoch on my CPU (Core i5 @2.80GHz) and gives me 77.65% test accuracy after 6 epochs (best validation accuracy=77.29%).
 
 Here are sample explanations:
 
+
 ```
-... silly humbuggery ...
-Positive contribution: ... _____ __________ ___
-Negative contribution: ___ silly humbuggery ...
+Payami tries to raise some serious issues about Iran 's electoral process , but the result is a film that 's about as subtle as a party political broadcast .
+Positive contribution: ______ _____ __ _____ ____ _______ issues about ____ __ _________ _______ _ ___ ___ ______ __ _ ____ ____ __ _____ __ subtle as a party political broadcast .
+Negative contribution: Payami tries to raise some _______ ______ _____ Iran __ _________ process , but the result is a film that 's about as ______ __ _ _____ _________ _________ _
 ```
 
 ```
-But they do n't fit well together and neither is well told .
-Positive contribution: But ____ __ ___ ___ ____ ________ ___ _______ is ____ ____ _
-Negative contribution: ___ they do n't fit well ________ and neither __ ____ ____ _
+A smug and convoluted action-comedy that does n't allow an earnest moment to pass without reminding audiences that it 's only a movie .
+Positive contribution: _ ____ ___ __________ _____________ ____ ____ ___ _____ __ _______ ______ to pass without _________ _________ ____ __ __ ____ a movie .
+Negative contribution: _ smug and __________ action-comedy that does n't allow an earnest moment __ ____ _______ reminding audiences that it 's only _ _____ _
 ```
 
 ```
-A rollicking ride , with jaw-dropping action sequences , striking villains , a gorgeous color palette , astounding technology , stirring music and a boffo last hour that leads up to a strangely sinister happy ending .
-Positive contribution: A rollicking ____ _ ____ ____________ ______ _________ _ ________ ________ _ _ ________ _____ _______ _ __________ __________ _ ________ _____ ___ _ _____ ____ ____ ____ _____ __ __ _ _________ ________ happy ending .
-Negative contribution: _ __________ ride , with ____________ ______ _________ , striking ________ _ _ ________ _____ _______ _ __________ __________ _ stirring music ___ _ _____ last hour that leads up to a _________ ________ _____ ______ _
+An intelligent , multi-layered and profoundly humanist -LRB- not to mention gently political -RRB- meditation on the values of knowledge , education , and the affects of cultural and geographical displacement .
+Positive contribution: An intelligent _ _____________ ___ __________ ________ _____ ___ __ _______ ______ _________ _____ __________ __ ___ ______ __ _________ _ _________ _ ___ ___ _______ __ ________ ___ ____________ displacement .
+Negative contribution: __ ___________ _ multi-layered and profoundly humanist -LRB- not to mention ______ political -RRB- meditation on the values __ knowledge , education , and the _______ __ ________ ___ ____________ ____________ _
 ```
 
 ## Explanations

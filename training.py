@@ -12,7 +12,6 @@ import dynn
 from dynn.util import num_params
 
 import models
-from models.util import load_pretrained_embeddings
 import util
 
 
@@ -42,7 +41,7 @@ def get_training_args():
     model_group.add_argument("--model-file", default="sopa_sst.npz")
     model_group.add_argument("--pretrained-embeds", default=None, type=str)
     model_group.add_argument("--freeze-embeds", action="store_true")
-    model_group.add_argument("--renormalize-embeds", action="store_true")
+    model_group.add_argument("--normalize-embeds", action="store_true")
     # Misc
     misc_group = parser.add_argument_group("Miscellaneous arguments")
     model_group.add_argument("--verbose", action="store_true")
@@ -70,13 +69,11 @@ def instantiate_network(args, dic, log=None):
     log(f" - other: {num_params(network.pc, lookup_params=False)}")
     # Load pretrained word embeddings maybe
     if args.pretrained_embeds is not None:
-        load_pretrained_embeddings(
-            network.get_word_embeddings(),
-            network.dic,
-            args.pretrained_embeds,
-            renormalize=args.renormalize_embeds,
-        )
+        network.load_pretrained_embeddings(args.pretrained_embeds)
         network.freeze_embeds = args.freeze_embeds
+    # normalize to unit norm
+    if args.normalize_embeds:
+        network.normalize_embeddings()
     return network
 
 
@@ -120,7 +117,8 @@ def train(args, network, train_batches, dev_batches, log=None):
                     f"NLL={avg_nll:.3f}")
                 running_nll = n_processed = 0
         # End of epoch logging
-        log(f"Epoch {epoch}@100%: NLL={nll.value():.3f}")
+        avg_nll = running_nll/n_processed
+        log(f"Epoch {epoch}@100%: NLL={avg_nll:.3f}")
         log(f"Took {time.time()-start_time:.1f}s")
         log("=" * 20)
         # Validate
@@ -134,6 +132,7 @@ def train(args, network, train_batches, dev_batches, log=None):
             deadline = 0
         else:
             if deadline < args.patience:
+                dynn.io.populate(network.pc, args.model_file)
                 trainer.learning_rate *= args.lr_decay
                 deadline += 1
             else:

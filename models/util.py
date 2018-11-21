@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import numpy as np
 
 
 def load_pretrained_embeddings(
@@ -6,30 +7,22 @@ def load_pretrained_embeddings(
     dic,
     filename,
     lowercase=False,
-    renormalize=True
 ):
     """Load word embeddings from a glove-style file"""
-    # Record the original std/mean of the word embeddings
-    if renormalize:
-        prev_embeds = word_embeddings.as_array()
-        mean = prev_embeds.mean()
-        std = prev_embeds.std()
     # Load vectors word by word
     with open(filename) as f:
         for line in f:
-            fields = line.strip().split(" ")
-            word = fields[0]
+            word, vector_string = line.strip().split(" ", 1)
             if lowercase:
                 word = word.lower()
             if word in dic.indices:
                 wid = dic.index(word)
-                vector = [float(x) for x in fields[1:]]
+                vector = np.fromstring(vector_string, sep=" ")
                 word_embeddings.init_row(wid, vector)
-    # Renormalize to the same std/mean as the original word embeddings
-    if renormalize:
-        new_embeds = word_embeddings.as_array()
-        mean_ = new_embeds.mean()
-        std_ = new_embeds.std()
-        whitened_embeds = (new_embeds - mean_) / std_
-        adjusted_embeds = std * whitened_embeds + mean
-        word_embeddings.init_from_array(adjusted_embeds)
+
+
+def normalize_embeddings(embeddings, norm=1.0):
+    embed_matrix = embeddings.as_array()
+    norms = np.linalg.norm(embed_matrix, axis=-1).reshape(-1, 1)
+    norms = np.where(norms <= 0, 1e-20, norms)
+    embeddings.init_from_array(embed_matrix / norms * norm)
